@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>hw</title>
+    <!-- <script src="https://cdn.bootcdn.net/ajax/libs/xlsx/0.18.5/xlsx.core.min.js"></script> -->
+    <script src="./xlsx.js"></script>
+</head>
+
+<body>
+    <!-- 
+        请帮我编写一套程序，能够用记事本制作一张网页，其中可以运行一套程序。这套
+        程序可以由用户输入一句诗
+        句，如果其中没有“床”字，则显示“检测不到床字，请重新输入”；如果其中
+        有“床”字，则继续运行，读取该目录下名为“床字诗”的
+        excel表格中的sheet？，将
+        输入的诗句与第C列的数据
+        进行比对，如果找不到，则显示“该诗句不属于《全
+        唐诗》或有误”，如果找到了，则读取该excel表格中
+        对应的第E列一栏数据，输出在该网站页面上。
+     -->
+    <input type="file" id="fileInput" placeholder="上传excel">
+
+    <input type="text" placeholder="请输入带有床的诗句" id="poem-input">
+
+    <p id="poem-show"></p>
+
+    <script>
+        // 读取本地excel文件函数
+        function readWorkbookFromLocalFile(file, callback) {
+            var reader = new FileReader();
+            // 以二进制方式打开文件
+            reader.onload = function (e) {
+                var data = e.target.result;
+                // 解析文件
+                var workbook = XLSX.read(data, { type: 'binary' });
+                // 在callback中处理workbook即可
+                if (callback) callback(workbook);
+            };
+            reader.readAsBinaryString(file);
+        }
+
+
+        const poem_input = document.querySelector("#poem-input")
+        const file_input = document.querySelector("#fileInput")
+        const poem_show = document.querySelector("#poem-show")
+        // 用户选择的excel文件对象
+        let excel_file = null
+
+        //  监听文件上传的change事件 将用户选择的文件对象赋值给excel_file
+        file_input.addEventListener('change', (e) => {
+            excel_file = e.target.files[0]
+        })
+
+        // 监听用户输入的诗句
+        poem_input.addEventListener('change', (e) => {
+            readWorkbookFromLocalFile(excel_file, function (workbook) {
+                var sheetNames = workbook.SheetNames; // 工作表名称集合
+                var worksheet = workbook.Sheets[sheetNames[0]]; // 这里我们只读取第一张sheet
+                // 转换成CSV格式
+                var csv = XLSX.utils.sheet_to_csv(worksheet);
+                console.log(csv)
+                const poem = e.target.value
+                let flag = poem.includes('床')// 检测是否有床字 
+                if (flag) {
+                    const poem_arr = csv.split('\n') // 将csv 每一行转换成数组
+                    const poem_arr_len = poem_arr.length
+                    let _flag = false // 监测是否找到诗句
+                    for (let i = 0; i < poem_arr_len; i++) {
+                        const poem_arr_item = poem_arr[i].split(',') // 将每一行的每一列数据转换成数组
+                        if (poem_arr_item[2] === poem) { // 比对C列诗句
+                            _flag = true
+                            poem_show.innerHTML = poem_arr_item[4] // 输出E列数据
+                            console.log(poem_arr_item[4])
+                            break
+                        }
+                    }
+                    if (!_flag) {
+                        alert('该诗句不属于《全唐诗》或有误')
+                    }
+                } else {
+                    alert('检测不到床字，请重新输入')
+                }
+            });
+        })
+    </script>
+</body>
+
+</html>
